@@ -1,0 +1,14 @@
+{
+    "folders": [
+        { "path": "solver" },
+        { "path": "stream-replay" }
+    ],
+    "settings": {
+        "rust-analyzer.linkedProjects": [
+            "D:\\Repository\\mulNICtl_new\\solver\\Cargo.toml",
+            "D:\\Repository\\mulNICtl_new\\stream-replay\\rx\\Cargo.toml",
+            "D:\\Repository\\mulNICtl_new\\stream-replay\\Cargo.toml",
+
+        ]
+    }
+}

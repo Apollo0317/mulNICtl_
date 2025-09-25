@@ -99,10 +99,14 @@ GB_CONTROL_SCHEMA = Schema({
 traffic_config_schema = Schema(Or({
     'thru'      : Or(int, float),
     'link'      : str,
+    "arrivalGap": int ,
     'port'      : int,
     'file_type' : Or('file', 'proj'),
     'links'     : [[str]],
     'tx_parts'  : TX_PARTS_SCHEMA,
+    'sampleRate': int,
+    'throttle': Or(int, float) ,
+    'duration'  : [Or(int, float),Or(int, float)],
     Optional('channels')  : [Or(CHANNEL0, CHANNEL1)],
     Optional('tos'): int,
 }, None))

@@ -2,12 +2,15 @@ mod types;
 mod cores;
 mod tests;
 mod api;
+mod sample;
 
 extern crate blas_src;
 
+use sample::*;
 use core::str;
 use std::collections::HashMap;
 use std::net::UdpSocket;
+use std::time::{SystemTime,UNIX_EPOCH};
 use base64::prelude::*;
 use serde_json::Value;
 use clap::Parser;
@@ -35,21 +38,21 @@ trait CenSolver {
 fn algorithm_selection(glb_state: &State) -> Option<Box<dyn DecSolver>>{
     let color_values = glb_state.color.values().cloned().collect::<Vec<Color>>();
     if color_values.len() == 0 || color_values.len() > 2 {
-        println!("color_values: {:?}", color_values.clone());
+        // println!("color_values: {:?}", color_values.clone());
         eprintln!("The number of channel is zero or more than 2; Not handle.");
         return None;
     }
     match color_values.as_slice() {
         [Color::Green]  => None,
         [Color::Yellow] => None,
-        [Color::Red]    => Some( Box::new(FileSolver {throttle_step_size: 10.0}) ),
+        [Color::Red]    => Some( Box::new(FileSolver {throttle_step_size: -10.0}) ),
 
         [Color::Green, Color::Green]    => Some( Box::new( GSolver { throttle_step_size: 10.0,  is_back_switch: true } ) ),
         [Color::Yellow, Color::Yellow]  => Some( Box::new( GSolver { throttle_step_size: -10.0, is_back_switch: false} ) ),
         [Color::Red, Color::Red]        => Some( Box::new( GSolver { throttle_step_size: -10.0, is_back_switch: false} ) ),
 
-        [Color::Green, Color::Yellow] | [Color::Yellow, Color::Green]     => Some( Box::new(GSolver { throttle_step_size: 10.0,  is_back_switch: false}) ),
-        [Color::Green, Color::Red]    | [Color::Red, Color::Green]        => Some( Box::new(GSolver { throttle_step_size: 10.0,  is_back_switch: false}) ),
+        [Color::Green, Color::Yellow] | [Color::Yellow, Color::Green]     => Some( Box::new(GSolver { throttle_step_size: -10.0,  is_back_switch: false}) ),
+        [Color::Green, Color::Red]    | [Color::Red, Color::Green]        => Some( Box::new(GSolver { throttle_step_size: -10.0,  is_back_switch: false}) ),
         [Color::Yellow, Color::Red]   | [Color::Red, Color::Yellow]       => Some( Box::new(GSolver { throttle_step_size: -10.0, is_back_switch: false}) ),
 
         _ => None,
@@ -81,7 +84,7 @@ impl Controller {
     }
 
     pub fn control(&mut self, qoss: HashMap<String, Qos>) -> HashMap<String, Action>{
-        println!("qoss: {:?}", qoss);
+        // println!("qoss: {:?}", qoss);
         self.glb_state.update(&qoss);
         self.history_qos.push(qoss);
         if self.history_qos.len() > HYPER_PARAMETER.maximum_his_len {
@@ -115,6 +118,7 @@ fn optimize(
     target_ips: HashMap<String, (String, u16)>,
     name2ipc: HashMap<String, String>,
     monitor_ip: String,
+
 ){
     print!("target_ips: {:?}", target_ips.clone());
     print!("name2ipc: {:?}", name2ipc.clone());
@@ -127,8 +131,15 @@ fn optimize(
     // Start Control
     let mut controller = Controller::new();
     println!("Start Control");
+    let param=[(0.0,1.0),(0.0,1.0),(0.0,1.0),(0.0,300.0),(0.0,300.0),(0.0,300.0)];
+    let n_samples=HYPER_PARAMETER.running_duration-HYPER_PARAMETER.ctl_time;
+    //let seed=SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+    let seed=10;
+    let sample=latin_hypercube_sampling(&param,n_samples,seed);
+
     for idx in 0..HYPER_PARAMETER.running_duration {
         let stats = ipc_manager.qos_collect();
+        println!("idx: {}, stats: {:?}", idx, stats.clone());
 
         // Trasform Statistics to QoS, by adding missing value from base_info AND delete the useless value
         let mut qoss = HashMap::new();
@@ -136,6 +147,8 @@ fn optimize(
             let qos:Qos = (&stat, base_info.get(&name).unwrap()).into();
             qoss.insert(name, qos);
         }
+
+        //println!("qoss: {:?}", qoss);
 
         // Send to monitor ips
         match serde_json::to_string(&qoss) {
@@ -151,21 +164,23 @@ fn optimize(
             qoss.remove(name);
         }
 
-        if idx == 0 {
-            let mut controls = controller.control(qoss.clone());
-            // modify tx_part of controls
-            for (_, control) in controls.iter_mut() {
-                if control.tx_parts.is_some() {
-                    control.tx_parts = vec![1.0, 1.0].into();
-                }
-            }
-            ipc_manager.apply_control(controls);
-        }
+        // if (idx == 0) || (idx == 2 * HYPER_PARAMETER.ctl_time) {
+        //     let mut controls = controller.control(qoss.clone());
+        //     // modify tx_part of controls
+        //     for (_, control) in controls.iter_mut() {
+        //         if control.tx_parts.is_some() {
+        //             control.tx_parts = vec![1.0, 1.0].into();
+        //         }
+        //     }
+        //     ipc_manager.apply_control(controls);
+        // }
         
         
         if idx > HYPER_PARAMETER.ctl_time {
             // Control
-            let controls = controller.control(qoss.clone());
+            // let controls = controller.control(qoss.clone());
+            let controls=no_calc_ctl(idx,sample.clone());
+            //println!("{:?}", controls);
             match serde_json::to_string(&controls) {
                 Ok(value) => {
                     let _ = send_socket.send_to(value.as_bytes(), monitor_ip.clone());
@@ -183,8 +198,54 @@ fn optimize(
         std::thread::sleep(std::time::Duration::from_secs(1));
     }
 
+    println!("Ending Normally")
+
 }
 
+fn no_calc_ctl(idx:usize,sample:Vec<Vec<f64>>)->HashMap<String,Action>{
+    // let tx_1=String::from("6209@128");
+    // let tx_2=String::from("6210@128");
+    let v_1=String::from("6205@128");
+    let v_2=String::from("6206@128");
+    let v_3=String::from("6207@128");
+    // let f_1=String::from("6211@96");
+    // let f_2=String::from("6212@96");
+    // let f_3=String::from("6213@96");
+    // let limit=HYPER_PARAMETER.throttle_high-HYPER_PARAMETER.throttle_low;
+    // let real_d=HYPER_PARAMETER.running_duration-HYPER_PARAMETER.ctl_time;
+    // let idx:f64=idx as f64;
+    // let real_d:f64=real_d as f64;
+    // let throttle=HYPER_PARAMETER.throttle_low+idx*limit/real_d;
+    // let tx_part=idx/real_d;
+    // let tx_part=[tx_part,tx_part];
+
+    let action_1=Action::new(to_vector(get_sample_value(&sample,idx,0)),None,None);
+    let action_2=Action::new(to_vector(get_sample_value(&sample,idx,1)),None,None);
+    let action_3=Action::new(to_vector(get_sample_value(&sample,idx,2)),None,None);
+    // let action_4=Action::new(None,get_sample_value(&sample,idx,3),None);
+    // let action_5=Action::new(None,get_sample_value(&sample,idx,4),None);
+    // let action_6=Action::new(None,get_sample_value(&sample,idx,5),None);
+    
+fn to_vector(num:Option<f64>)->Option<Vec<f64>>{
+    let num=num.unwrap();
+    Some([num,num].to_vec())
+}
+
+
+    let mut controls=HashMap::new();
+    // controls.insert(tx_1.clone(),action.clone());
+    // controls.insert(tx_2.clone(),action.clone());
+    controls.insert(v_1.clone(),action_1.clone());
+    controls.insert(v_2.clone(),action_2.clone());
+    controls.insert(v_3.clone(),action_3.clone());
+    // controls.insert(f_1.clone(),action_4.clone());
+    // controls.insert(f_2.clone(),action_5.clone());
+    // controls.insert(f_3.clone(),action_6.clone());
+    //println!("arg_1={}",get_sample_value(&sample,0,1).unwrap());
+
+    controls
+
+}
 
 #[derive(Serialize, Deserialize, Debug, Parser)]
 #[clap(author, version, about, long_about=None)]
@@ -236,6 +297,7 @@ pub fn main() {
             return;
         }
     };
+
 
     optimize(base_info, target_ips, name2ipc, args.monitor_ip);
 }

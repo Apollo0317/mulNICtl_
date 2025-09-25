@@ -1,0 +1,2 @@
+STA51 --wlan0-- --wlan0-- STA52
+STA51 --p2p0-- --p2p0-- STA52

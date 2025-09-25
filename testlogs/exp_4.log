@@ -1,0 +1,2 @@
+2025-09-21 23:13:08,214 - exp - INFO - 开始构建拓扑：./config/topo/2025-9-21.txt
+2025-09-21 23:13:08,214 - exp - DEBUG - construct_graph 获取的 links: ['lo_lo_STA1_STA2']

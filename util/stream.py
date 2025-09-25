@@ -19,6 +19,7 @@ if ppath not in sys.path:
 "no_logging": true,
 "links": [["192.168.3.12", "192.168.3.14"]],["192.168.3.12", "192.168.3.14"]],
 "tx_parts": [0.1, 0.9]
+"sampleRate": 1,
 '''
 CONTENT = {
     "window_size": 500,
@@ -43,6 +44,7 @@ class stream:
         self.channels   = []
         self.name       = ''
         self.duration   = [0.0, 1000000.0]
+        self.sampleRate = 1
 
     def __str__(self) -> str:
         return json.dumps(self.__dict__, indent=2)

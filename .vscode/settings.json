@@ -1,8 +1,11 @@
 {
     "rust-analyzer.linkedProjects": [
-        "./stream-replay-rx/Cargo.toml"
+        "./stream-replay-rx/Cargo.toml",
+        "D:/Repository/mulNICtl_new/solver/Cargo.toml"
     ],
     "python.analysis.extraPaths": [
         "./run_"
-    ]
+    ],
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.pythonProjects": []
 }

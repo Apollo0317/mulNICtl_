@@ -8,42 +8,45 @@ pub struct HyperParameter<'a> {
     pub degration_tx_part_threshold: f64,
     pub wait_slots: usize,
     pub maximum_his_len: usize,
-    pub ports_tobe_pop: [&'a str; 3],
+    pub ports_tobe_pop: [&'a str; 6],
+    // pub ports_real_video: [&'a str; 1],
     pub running_duration: usize,
     pub ctl_time: usize,
 
     pub his_back_time: usize,
     pub back_off_rtt_threshold_factor: f64, // Threshold used to determine the reference backoff time  
     
-    pub balance_channel_rtt_thres: f64,
+    pub balance_channel_rtt_thres: f64,//determine maximum step size in tx_parts
     pub balance_time_thres: usize,
     pub balance_tx_part_thres: f64,
     pub balance_rtt_thres: f64,
 }
 
 pub(crate) static HYPER_PARAMETER: HyperParameter = {
-    let throttle_high = 300.0;
-    let throttle_low = throttle_high * 0.7;
+    let throttle_high = 180.0;
+    let throttle_low = throttle_high * 0.1;
     HyperParameter {
         throttle_low,
         throttle_high,
         backward_threshold: 0.8,
         epsilon_rtt: 0.002,
         scale_factor: 1.0,
-        degration_threshold: 1.2,
+        degration_threshold: 1.5,
         degration_tx_part_threshold: 0.8,
         wait_slots: 5,
         maximum_his_len: 10,
-        ports_tobe_pop: ["6209@192", "6210@192", "6211@192"],
-        running_duration: 200,
-        ctl_time: 100,
+        ports_tobe_pop: ["6209@128", "6210@128", "6211@128","6219@128", "6220@128", "6221@128"],
+        // ports_real_video: ["stream://test"],
+        running_duration: 30,
+        ctl_time: 0,
 
-        his_back_time: 5,
+        his_back_time: 30,
         back_off_rtt_threshold_factor: 0.6,
 
         balance_channel_rtt_thres: 0.005,
-        balance_time_thres: 10,
-        balance_tx_part_thres: 0.3,
-        balance_rtt_thres: 0.005,
+
+        balance_time_thres: 3,
+        balance_tx_part_thres: 0.5,
+        balance_rtt_thres: 0.05,
     }
 };

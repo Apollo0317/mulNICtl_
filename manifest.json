@@ -51,10 +51,11 @@
                 "port": 0,
                 "calc_rtt": "",
                 "tos": 100,
-                "src_ipaddrs": "--src_ipaddrs=127.0.0.1"
+                "src_ipaddrs": "--src-ipaddrs=127.0.0.1",
+                "src_sampleRate": "--sample-rate=1"
             },
             "commands": [
-                "(cd stream-replay; ./target/release/stream-replay-rx $port $duration calc-rtt $src_ipaddrs)"
+                "(cd stream-replay; ./target/release/stream-replay-rx $port $duration --calc-rtt $src_ipaddrs $src_sampleRate)"
             ],
             "outputs": {
                 "throughput": {
@@ -78,10 +79,11 @@
                 "port": 0,
                 "calc_rtt": "",
                 "tos": 100,
-                "src_ipaddrs": "--src_ipaddrs=127.0.0.1"
+                "src_ipaddrs": "--src_ipaddrs=127.0.0.1",
+                "src_sampleRate": "--sample-rate=1"
             },
             "commands": [
-                "(cd stream-replay; RUST_LOG=trace ./target/release/stream-replay-rx $port $duration calc-rtt $src_ipaddrs)"
+                "(cd stream-replay; RUST_LOG=trace ./target/release/stream-replay-rx $port $duration --calc-rtt $src_ipaddrs $src_sampleRate)"
             ],
             "outputs": {
                 "throughput": {
@@ -98,7 +100,7 @@
             "description": "Cargo build stream-replay.",
             "parameters":{},
             "commands": [
-                "(cd stream-replay; cargo build --release)"
+                "(cd stream-replay; rm -rf target; cargo build --release)"
             ]
         },
         "init_stream": {
@@ -314,7 +316,7 @@
                 "file_name": "../stream-replay/logs/*.txt"
             },
             "commands":[
-                "cd tools; python3 file_tx.py -i $target_ip -f $file_name"
+                "cd tools; python3 file_tx.py -i $target_ip -f $file_name; rm $file_name"
             ]
         },
         "abuse_manifest":{
@@ -378,6 +380,33 @@
             },
             "commands":[
                 "echo $password | sudo -S killall stream-replay-rx"
+            ]
+        },
+        "clean_tx":{
+            "description": "clean up stream-replay-tx",
+            "parameters":{
+        
+            },
+            "commands":[
+                "pkill -f './target/release/stream-replay-tx'"
+            ]
+        },
+        "clean_rx":{
+            "description": "clean up stream-replay-rx",
+            "parameters":{
+        
+            },
+            "commands":[
+                "pkill -f './target/release/stream-replay-rx'"
+            ]
+        },
+        "clean_monitor":{
+            "description": "clean up solver",
+            "parameters":{
+        
+            },
+            "commands":[
+                "pkill -f 'target/debug/solver'"
             ]
         }
     }

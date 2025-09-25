@@ -27,7 +27,11 @@ class CtlManager:
         create_tx_manifest(topo)
         time.sleep(1)
         conn        = start_transmission(graph = topo, DURATION = self.duration)
-        thrus       = read_thu( conn )
+        try:
+            thrus       = read_thu( conn )
+        except:
+            print("debug")
+            thrus = 0
         result_queue.put(thrus)
         
     def exp_thread(self, topo:Graph, thread_handles:List[threading.Thread] = []):
@@ -266,13 +270,16 @@ def start_transmission(graph:Graph, DURATION):
                         receiver,
                         "outputs_throughput",
                         {"port": port_num, "duration": DURATION},
-                        timeout= DURATION + 5,
+                        timeout= DURATION + 50,
                     )
                 else:
                     src_ipaddrs = stream_handle.tx_ipaddrs()
+                    sampleRates = stream_handle.sampleRate
+                    src_sampleRates = ""
                     src_commands = ""
                     for src_ip in src_ipaddrs:
                         src_commands += f"--src-ipaddrs={src_ip} "
+                    src_sampleRates += f"--sample-rate={sampleRates}"
                     conn.batch(
                         receiver,
                         "outputs_throughput_jitter",
@@ -282,8 +289,9 @@ def start_transmission(graph:Graph, DURATION):
                             "calc_rtt": "--calc-rtt",
                             "tos": tos,
                             "src_ipaddrs": src_commands,
+                            "src_sampleRate": src_sampleRates
                         },
-                        timeout=DURATION + 5,
+                        timeout=DURATION + 50,
                     )
 
     conn.executor.wait(1)
@@ -312,10 +320,10 @@ def start_transmission(graph:Graph, DURATION):
                         "ipc_port"
                     ],
                 },
-                timeout= DURATION + 5,
+                timeout= DURATION + 50,
             )
 
-    return conn.executor.wait(DURATION + 5)
+    return conn.executor.wait(DURATION + 50)
 
 def start_transmission_trace_log(graph:Graph, DURATION):
     """
@@ -339,7 +347,7 @@ def start_transmission_trace_log(graph:Graph, DURATION):
                         receiver,
                         "outputs_throughput",
                         {"port": port_num, "duration": DURATION},
-                        timeout= DURATION + 5,
+                        timeout= DURATION + 50,
                     )
                 else:
                     src_ipaddrs = stream_handle.tx_ipaddrs()
@@ -356,7 +364,7 @@ def start_transmission_trace_log(graph:Graph, DURATION):
                             "tos": tos,
                             "src_ipaddrs": src_commands,
                         },
-                        timeout=DURATION + 5,
+                        timeout=DURATION + 50,
                     )
 
     conn.executor.wait(1)
@@ -384,10 +392,10 @@ def start_transmission_trace_log(graph:Graph, DURATION):
                         "ipc_port"
                     ],
                 },
-                timeout= DURATION + 5,
+                timeout= DURATION + 50,
             )
 
-    return conn.executor.wait(DURATION + 5)
+    return conn.executor.wait(DURATION + 50)
 
 def fileTransfer(graph, target_ip, output_folder, file_name, file_link_name):
     conn = Connector()
@@ -492,7 +500,7 @@ def read_thu(conn:Connector):
             if idx >= maximum_retry:
                 break
             continue
-
+    print("FFF")
 
 def graph_qos_collections(graph:Graph):
     qoses = {}

@@ -1,0 +1,21 @@
+/// 转置二维数组
+fn transpose<T>(matrix: Vec<Vec<T>>) -> Vec<Vec<T>>
+where
+    T: Clone,
+{
+    if matrix.is_empty() {
+        return vec![];
+    }
+
+    let n_rows = matrix.len();
+    let n_cols = matrix[0].len();
+
+    let mut transposed = vec![vec![T::default(); n_rows]; n_cols];
+    for i in 0..n_rows {
+        for j in 0..n_cols {
+            transposed[j][i] = matrix[i][j].clone();
+        }
+    }
+
+    transposed
+}

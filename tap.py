@@ -319,7 +319,10 @@ class Handler:
         def console(self, args:list):
             ## --> [server]
             req_args = '##'.join([ f'{x[0]}@{x[1]}' for x in args ])
+            print(f'\nreq_args=\n{req_args}\n')
             req = f'batch_execute {req_args}'.encode()
+            if self.handler.sock.type==socket.SOCK_DGRAM:
+                print(f'[UDP] sendto {self.handler.sock.getpeername()}')
             self.handler.sock.send(req)
             ## <-- [server]
             res = self.handler.sock.recv(BUFFER_SIZE).decode()
@@ -575,6 +578,7 @@ class Connector(Handler):
             pass
 
         def _apply_tasks(self):
+            print(f'\nhandle task_list:\n{self.task_list}\n')
             res = self.parent.handle('batch_execute', self.task_list)
             [ UntangledException(e) for e in res['err_list'] if e ]
             ##
@@ -593,6 +597,7 @@ class Connector(Handler):
         def _apply_outputs(self):
             if self.task_list: self._apply_tasks()
             outputs = self.outputs
+            print('output successfully')
             self._initialize() #cleanup
             return outputs
 
@@ -612,6 +617,7 @@ class Connector(Handler):
             args = {'request':'execute', 'args':args}
             cmd = ( client, json.dumps(args) )
             self.pipeline.append(cmd)
+            #print(f'cmd={cmd}\ncmd={cmd}')
             return self
 
         def batch_all(self, task_list:list):
