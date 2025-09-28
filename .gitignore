@@ -12,4 +12,4 @@ __pycache__
 /solver/target
 /.log
 /solver (copy)/*
-/testlogs/
+/testlogs/*
