@@ -10,3 +10,6 @@ __pycache__
 .vscode
 /solver/.mypy_cache
 /solver/target
+/.log
+/solver (copy)/*
+/testlogs/*

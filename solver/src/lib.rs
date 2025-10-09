@@ -111,6 +111,13 @@ impl Controller {
         }
         // }
     }
+
+    pub fn no_calc_control(&mut self, idx:usize, sample:&Vec<Vec<f64>>, qoss: &HashMap<String, Qos>)->HashMap<String, Action>{
+        let controls = qoss.iter().enumerate().map(|(i,(name, _qos))|{
+            (name.clone() , Action::new(to_vector(get_sample_value(&sample, idx, i)), None, None))
+        }).collect() ;
+        controls
+    }
 }
 
 fn optimize(
@@ -131,7 +138,7 @@ fn optimize(
     // Start Control
     let mut controller = Controller::new();
     println!("Start Control");
-    let param=[(0.0,1.0),(0.0,1.0),(0.0,1.0),(0.0,300.0),(0.0,300.0),(0.0,300.0)];
+    let param=[(0.0,1.0),(0.0,1.0),(0.0,1.0)];
     let n_samples=HYPER_PARAMETER.running_duration-HYPER_PARAMETER.ctl_time;
     //let seed=SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
     let seed=10;
@@ -139,7 +146,7 @@ fn optimize(
 
     for idx in 0..HYPER_PARAMETER.running_duration {
         let stats = ipc_manager.qos_collect();
-        println!("idx: {}, stats: {:?}", idx, stats.clone());
+        println!("idx: {}, stats: {:?}\n", idx, stats.clone());
 
         // Trasform Statistics to QoS, by adding missing value from base_info AND delete the useless value
         let mut qoss = HashMap::new();
@@ -148,7 +155,7 @@ fn optimize(
             qoss.insert(name, qos);
         }
 
-        //println!("qoss: {:?}", qoss);
+        //println!("qoss: {:?}\n", qoss);
 
         // Send to monitor ips
         match serde_json::to_string(&qoss) {
@@ -164,26 +171,16 @@ fn optimize(
             qoss.remove(name);
         }
 
-        // if (idx == 0) || (idx == 2 * HYPER_PARAMETER.ctl_time) {
-        //     let mut controls = controller.control(qoss.clone());
-        //     // modify tx_part of controls
-        //     for (_, control) in controls.iter_mut() {
-        //         if control.tx_parts.is_some() {
-        //             control.tx_parts = vec![1.0, 1.0].into();
-        //         }
-        //     }
-        //     ipc_manager.apply_control(controls);
-        // }
-        
         
         if idx > HYPER_PARAMETER.ctl_time {
             // Control
-            // let controls = controller.control(qoss.clone());
-            let controls=no_calc_ctl(idx,sample.clone());
+            //let controls = controller.control(qoss.clone());
+            //let controls=no_calc_ctl(idx,sample.clone());
+            let controls= controller.no_calc_control(idx, &sample, &qoss);
             //println!("{:?}", controls);
             match serde_json::to_string(&controls) {
                 Ok(value) => {
-                    let _ = send_socket.send_to(value.as_bytes(), monitor_ip.clone());
+                    //let _ = send_socket.send_to(value.as_bytes(), monitor_ip.clone());
                 },
                 Err(e) => {
                     eprintln!("Error parsing controls: {}", e);
@@ -200,6 +197,11 @@ fn optimize(
 
     println!("Ending Normally")
 
+}
+
+fn to_vector(num:Option<f64>)->Option<Vec<f64>>{
+    let num=num.unwrap();
+    Some([num,num].to_vec())
 }
 
 fn no_calc_ctl(idx:usize,sample:Vec<Vec<f64>>)->HashMap<String,Action>{
@@ -301,3 +303,25 @@ pub fn main() {
 
     optimize(base_info, target_ips, name2ipc, args.monitor_ip);
 }
+
+// #[cfg(test)]
+// mod test {
+
+//     use super::*;
+//     #[test]
+//     fn test_no_calc_ctl(){
+//         let mut controller= Controller::new();
+//         let mut qoss=HashMap::new();
+//         qoss.insert(String::from("6205@128"), None);
+//         qoss.insert(String::from("6206@128"), None);
+//         qoss.insert(String::from("6207@128"), None);       
+//         let param=[(0.0,1.0),(0.0,1.0),(0.0,1.0)];
+//         let n_samples=10;
+//         let seed=10;
+//         let sample=latin_hypercube_sampling(&param,n_samples,seed);
+//         for idx in 0..10{
+//             let controls=controller.no_calc_control(idx, &sample, &qoss);
+//             println!("idx: {}, controls: {:?}", idx, controls);
+//         }
+//     }
+// }

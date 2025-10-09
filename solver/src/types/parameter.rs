@@ -37,7 +37,7 @@ pub(crate) static HYPER_PARAMETER: HyperParameter = {
         maximum_his_len: 10,
         ports_tobe_pop: ["6209@128", "6210@128", "6211@128","6219@128", "6220@128", "6221@128"],
         // ports_real_video: ["stream://test"],
-        running_duration: 30,
+        running_duration: 250,
         ctl_time: 0,
 
         his_back_time: 30,
