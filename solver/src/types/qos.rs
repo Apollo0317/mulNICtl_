@@ -19,6 +19,9 @@ pub struct Qos {
     pub channels: Vec<String>,
     pub throttle: f64,
     pub throughput: f64,
+    pub rssi_wifi: Option<i64>,
+    pub link_speed: Option<i64>,
+    pub rssi_p2p: Option<i64>,
 }
 
 impl From<(&Statistics, &StaticValue)> for Qos {
@@ -35,6 +38,9 @@ impl From<(&Statistics, &StaticValue)> for Qos {
             channels: static_value.channels.clone(),
             throttle: stats.throttle,
             throughput: stats.throughput,
+            rssi_wifi: Some(stats.rssi_wifi),
+            link_speed: Some(stats.link_speed),
+            rssi_p2p: Some(stats.rssi_p2p),
         }
     }
 }

@@ -14,6 +14,9 @@ pub struct Statistics {
     pub throughput: f64,
     pub tx_parts: Vec<f64>,
     pub throttle: f64,
+    pub rssi_wifi: i64,
+    pub link_speed: i64,
+    pub rssi_p2p: i64,
 }
 
 #[derive(Serialize, Deserialize, Default)]
