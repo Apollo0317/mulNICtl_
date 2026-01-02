@@ -1,0 +1,9 @@
+{
+    "correction_factors": {
+        "normal": 1.0272793054885192,
+        "duan": 1.0114248452241479
+    },
+    "skewness": 2.3791851267708903,
+    "selected_method": "Duan's Smearing",
+    "source": "validation_set_residuals"
+}
